@@ -47,12 +47,9 @@ class EventBus {
     // 获取事件的id
     let eventId = getUUID()
     // 向订阅中添加事件
-    if (!allEvents) {
-      this.eventBus.set(name, { [eventId]: callback })
-    } else {
-      allEvents[eventId] = callback
-      this.eventBus.set(name, allEvents)
-    }
+    allEvents || (allEvents = {})
+    allEvents[eventId] = callback
+    this.eventBus.set(name, allEvents)
     return eventId
   }
 
@@ -76,9 +73,9 @@ class EventBus {
   }
 
   /**
-   * 取消订阅
-   * @param {*} name 取消订阅类型
-   * @param {*} eventId 移除哪个事件名 订阅id  订阅事件名称
+   * 取消订阅 可以按照具名函数取消或者按照绑定返回的事件ID取消 如果第二个参数不传 那么就是取消的这类型下边的所有事件
+   * @param {Sting} name 取消订阅类型
+   * @param {Function|String|undefined} eventId 订阅事件id /订阅事件名称
    */
   off(name, eventId) {
     // 获取所有订阅该类型的事件
@@ -116,34 +113,74 @@ class EventBus {
    */
   once(name, callback) {
     let allEvents = this.eventBus.get(name)
+    allEvents || (allEvents = {})
     // 获取事件的id
     let eventId = SPECIAL_CHAR + getUUID()
     // 收集所有事件
     allEvents[eventId] = callback
     // 存储订阅所有事件
     this.eventBus.set(name, allEvents)
-    return eventId
   }
 }
 
 const eventBus = new EventBus()
 
-// 订阅A事件 触发
-let fn1 = () => {
-  console.log('订阅了A  触发fn1事件');
-}
-eventBus.on('A', a)
-
-let id1 = eventBus.on('A', () => {
-  console.log('订阅了A 触发fn2事件');
+/* 
+// 订阅与发布事件
+// 订阅了《光明日报》  的报纸
+eventBus.on('guangMingRiBao', () => {
+  console.log('收到了《光明日报》  的报纸');
 })
+// 发布事件
+eventBus.emit('guangMingRiBao')
+*/
+
+
+/* 
+// 发布事件传参
+// 这里我们订阅一下《青年报》并且快递员给我们说了一句话
+eventBus.on('qingNianBao', (msg) => {
+  console.log("送报员给我说：" + msg);
+})
+// 发布事件 并告诉客户说祝您生活愉快
+eventBus.emit('qingNianBao', '祝您生活愉快')
+*/
+
+
+/* 
+// 发布只订阅一次的事件  无论发布多少次 都只会执行一次订阅事件
+// 只订阅一次《男人装》杂志 来的再多我也不要
+eventBus.once('nanRenZhuang', ()=>{
+  console.log('收到了《男人装》杂志');
+})
+eventBus.emit('nanRenZhuang')
+eventBus.emit('nanRenZhuang')
+*/
 
 
 
-eventBus.emit('A')
-console.log('-------------- 我是分割线 --------------');
-// 取消订阅A 中的a事件
-eventBus.off('A', a)
-// 这里就不会触发handler1 事件了
-eventBus.emit('A')
-console.log('-------------- 我是分割线 --------------');
+// 通过具名函数定义回调事件
+function zaZhi() {
+  console.log('收到了《光明日报》的 杂志');
+}
+eventBus.on('guangMingRIBao', zaZhi)
+
+// 接收绑定事件的eventId
+let baoZhiID = eventBus.on('guangMingRIBao', () => {
+  console.log('收到了《光明日报》的 报纸');
+})
+// 发布事件
+eventBus.emit('guangMingRIBao')
+console.log('------------------------- 我是分割线 ---------------- \n');
+
+// 通过取消具名函数来取消订阅的内容
+eventBus.off('guangMingRIBao', zaZhi)
+// 上边我们取消了杂志的订阅 我们再次发布事件 应该只能看到订阅了报纸
+eventBus.emit('guangMingRIBao')
+console.log('------------------------- 我是分割线 ---------------- \n');
+
+// 我们通过取消订阅事件的ID来取消订阅
+eventBus.off('guangMingRIBao', baoZhiID)
+// 上边我们取消了杂志的订阅 这次我们取消报纸 应该不会看到打印的订阅信息了
+eventBus.emit('guangMingRIBao')
+console.log('------------------------- 我是分割线 ---------------- \n');
